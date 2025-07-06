@@ -2,21 +2,20 @@ package plugin.enemyDown.data;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.entity.Player;
 
 /**
- * EnemyDown のゲームを実行する際のスコア情報を扱うプロジェクト
+ * EnemyDown のゲームを実行する際のプレイヤー情報を扱うプロジェクト
  * プレーヤー名、合計点数、日時などの情報を持つ。
  */
 @Getter
 @Setter
-public class PlayerScore {
+public class ExecutingPlayer {
 
   private String playerName;
   private int score;
   private int gameTime;
 
-  public PlayerScore(String playerName) {
+  public ExecutingPlayer(String playerName) {
     this.playerName = playerName;
   }
 }
