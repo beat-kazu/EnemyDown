@@ -1,21 +1,11 @@
 package plugin.enemyDown.Command;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.SplittableRandom;
-import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -33,6 +23,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.NotNull;
+import plugin.enemyDown.PlayerScoreData;
 import plugin.enemyDown.Main;
 import plugin.enemyDown.data.ExecutingPlayer;
 import plugin.enemyDown.mapper.PlayerScoreMapper;
@@ -53,41 +44,24 @@ public class EnemyDownCommand extends BaseCommand implements  Listener {
   public static final String LIST = "list";
 
   private Main main;
+  private PlayerScoreData playerScoreData = new PlayerScoreData();
+
   private List<ExecutingPlayer> executingPlayerList = new ArrayList<>();
   private List<Entity> spawnEntityList = new ArrayList<>();
 
-  private SqlSessionFactory sqlSessionFactory;
+
   public EnemyDownCommand(Main main){
     this.main= main;
-
-    try {
-      InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
-      this.sqlSessionFactory =
-          new SqlSessionFactoryBuilder().build(inputStream);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   @Override
   public boolean onExecutePlayerCommand(Player player, @NotNull Command command,
       @NotNull String label, @NotNull String[] args) {
+    //最初の引数が「List」だったらスコアを一覧表示して処理を終了する。
     if(args.length ==1 && LIST.equals(args[0]) ){
-      try(SqlSession session = sqlSessionFactory.openSession()){
-        PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-        List<PlayerScore> playerScoreList = mapper.selectList();
-
-        for (PlayerScore playerScore : playerScoreList) {
-          player.sendMessage(playerScore.getId()+ " | "
-              + playerScore.getPlayerName()     + " | "
-              + playerScore.getScore()          + " | "
-              + playerScore.getDifficulty()     + " | "
-              + playerScore.getRegisteredAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        }
-      }
+      sendPlayerScoreList(player);
       return  false;
     }
-
     String difficulty = getdifficulty(player, args);
     if(difficulty.equals(NONE)){
       return false;
@@ -105,6 +79,27 @@ public class EnemyDownCommand extends BaseCommand implements  Listener {
     return true;
   }
 
+  @Override
+  public boolean onExecuteNPCCommand(CommandSender sender, @NotNull Command command,
+      @NotNull String label, @NotNull String[] args) {
+    return false;
+  }
+
+  /**
+   * 現在登録されているスコアの一覧をメッセージに送る。
+   * @param player　プレーヤー
+   */
+  private void sendPlayerScoreList(Player player) {
+    List<PlayerScore> playerScoreList = playerScoreData.selectList();
+    for (PlayerScore playerScore : playerScoreList) {
+      player.sendMessage(playerScore.getId()+ " | "
+          + playerScore.getPlayerName()     + " | "
+          + playerScore.getScore()          + " | "
+          + playerScore.getDifficulty()     + " | "
+          + playerScore.getRegisteredAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    }
+  }
+
   /**
    * 難易度をコマンド引数から取得します。
    * @param player　コマンドを実行したプレイヤー
@@ -117,13 +112,6 @@ public class EnemyDownCommand extends BaseCommand implements  Listener {
     }
     player.sendMessage(ChatColor.RED + "実行できません。コマンド引数の1つ目に難易度設定が必要です。[easy ,normal,hard]");
     return NONE;
-  }
-
-
-  @Override
-  public boolean onExecuteNPCCommand(CommandSender sender, @NotNull Command command,
-      @NotNull String label, @NotNull String[] args) {
-    return false;
   }
 
   @EventHandler
@@ -171,8 +159,6 @@ public class EnemyDownCommand extends BaseCommand implements  Listener {
     removePotionEffect(player);
     return executingPlayer;
   }
-
-
 
   /**
    * 新規のプレーヤー情報をリストに追加します。
@@ -223,14 +209,11 @@ public class EnemyDownCommand extends BaseCommand implements  Listener {
         removePotionEffect(player);
 
         // スコア登録処理
-        try(SqlSession session = sqlSessionFactory.openSession(true)){
-          PlayerScoreMapper mapper = session.getMapper(PlayerScoreMapper.class);
-          mapper.insert(
-              new PlayerScore(nowExecutingPlayer.getPlayerName()
-                  ,nowExecutingPlayer.getScore()
-                  ,difficulty));
+        playerScoreData.insert(
+            new PlayerScore(nowExecutingPlayer.getPlayerName()
+            ,nowExecutingPlayer.getScore()
+            ,difficulty));
 
-        }
         return;
       }
       Entity spwanEntity = player.getWorld().spawnEntity(getEnemySpawnLocation(player), enemy_dbg);
