@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="plugin.enemyDown.Command.EnemyDownCommandTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-07-16T13:59:33" hostname="KAZU-PC" time="0.246">
+  <properties/>
+  <testcase name="getdifficultyに渡す引数のargsの最初の文字列がnormalの時にnormalの文字列が返ること()" classname="plugin.enemyDown.Command.EnemyDownCommandTest" time="0.226"/>
+  <testcase name="getdifficultyに渡す引数のargsの最初の文字列がeasyの時にeasyの文字列が返ること()" classname="plugin.enemyDown.Command.EnemyDownCommandTest" time="0.018"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
